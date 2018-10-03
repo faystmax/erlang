@@ -11,21 +11,30 @@
 
 -compile(export_all).
 
-
 nod(A, 0) -> A;
 nod(A, B) -> nod(B, A rem B).
 
-nodList([A], Listener_PID) -> Listener_PID ! A, A;
-nodList([H1 | [H2 | T]], Listener_PID) -> nodList([nod(H1, H2) | T], Listener_PID).
-
-
-listener() ->
+nodListener(Main_PID) ->
   receive
-    A ->
-      io:format("Listener received ~B~n", [A]),
-      listener()
+    {result, Nod} ->
+      Main_PID ! Nod;
+    {A, B, NodList_PID} ->
+      NodList_PID ! nod(A, B),
+      nodListener(Main_PID)
   end.
 
-start(Numbers) ->
-  Listener_PID = spawn(nodProc, listener, []),
-  spawn(nodProc, nodList, [Numbers, Listener_PID]).
+nodList([A], NodListener_PID) -> NodListener_PID ! {result, A}, A;
+nodList([H1 | [H2 | T]], NodListener_PID) ->
+  NodListener_PID ! {H1, H2, self()},
+  receive
+    Nod ->
+      io:format("Nod between ~B and ~B = ~B~n", [H1, H2, Nod]),
+      nodList([Nod | T], NodListener_PID)
+  end.
+
+main(Numbers) ->
+  NodListener_PID = spawn(nodProc, nodListener, [self()]),
+  spawn(nodProc, nodList, [Numbers, NodListener_PID]),
+  receive
+    Nod -> io:format("Result Nod = ~B~n", [Nod]), Nod
+  end.
