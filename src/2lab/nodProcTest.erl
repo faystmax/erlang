@@ -11,7 +11,7 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
-nod_test_() -> [
+nodProc_test_() -> [
   ?_assertEqual(nodProc:main([1]), 1),
   ?_assertEqual(nodProc:main([1, 5, 10]), 1),
   ?_assertEqual(nodProc:main([100, 50, 25, 125, 1025]), 25),
