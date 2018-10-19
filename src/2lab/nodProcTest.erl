@@ -7,7 +7,7 @@
 %%% Created : 20. Сент. 2018 0:57
 %%%-------------------------------------------------------------------
 -module(nodProcTest).
--author("Макс").
+-author("faystmax@gmail.com").
 
 -include_lib("eunit/include/eunit.hrl").
 
@@ -21,3 +21,5 @@ nodProc_test_() -> [
   ?_assertEqual(nodProc:main([35, 65, 20]), 5),
   ?_assertEqual(nodProc:main([1, 1, 1, 1, 1, 1]), 1)
 ].
+
+
