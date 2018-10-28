@@ -35,7 +35,6 @@ nodList([H1 | [H2 | T]], NodListener_PID) ->
 main(Numbers) ->
   NodListener_PID = spawn(nodProc, nodListener, [self()]),
   spawn(nodProc, nodList, [Numbers, NodListener_PID]),
-  length()
   receive
     Nod -> io:format("Result Nod = ~B~n", [Nod]), Nod
   end.
