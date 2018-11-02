@@ -27,8 +27,11 @@ student() ->
     penalty ->
       io:format("Recived penalty from Police~n"),
       io:format("Start sleep~n"),
-%%      timer:sleep(3000),
+      timer:sleep(3000),
       io:format("End sleep~n")
+  after
+    5000 ->
+      io:format("Got nothing from Police~n")
   end, student().
 
 start_student(StreetNodeName) ->
@@ -38,12 +41,15 @@ start_student(StreetNodeName) ->
 
 
 police() ->
+  global:whereis_name(street) ! is_fantic,
   receive
-    hooligan ->
-      io:format("Recived hooligan from Street~n"),
+    yes ->
+      io:format("Recived yes from Street~n"),
       io:format("Sending penalty to student~n"),
-      global:whereis_name(student) ! penalty
-  end, police().
+      global:whereis_name(student) ! penalty;
+    no ->
+      io:format("Recived no from Street~n")
+  end, timer:sleep(3000), police().
 
 start_police(StudentNodeName) ->
   global:register_name(police, self()),
@@ -52,35 +58,51 @@ start_police(StudentNodeName) ->
 
 
 janitor() ->
+  global:whereis_name(street) ! is_clean,
   receive
-    clean_me ->
-      io:format("Recived clean_me from Street~n"),
+    yes ->
+      io:format("Recived yes from Street~n"),
       io:format("Sending cleaned to street~n"),
-      global:whereis_name(street) ! cleaned
-  end, janitor().
+      global:whereis_name(street) ! cleaned;
+    no ->
+      io:format("Recived no from Street~n")
+  end, timer:sleep(5000), janitor().
 
 start_janitor(StreetNodeName) ->
   global:register_name(janitor, self()),
   ping(StreetNodeName, pang),
   janitor().
 
-street() ->
+street(State) ->
   receive
     leaves ->
       io:format("Recived leaves from tree~n"),
-      global:whereis_name(janitor) ! clean_me;
+      street(dirty);
     cleaned ->
-      io:format("Recived clean from janitor~n");
+      io:format("Recived clean from janitor~n"),
+      street(clean);
     fantic ->
       io:format("Recived fantic from student~n"),
-      global:whereis_name(police) ! hooligan
-  end, street().
+      street(dirty);
+    is_clean ->
+      io:format("Recived is_clean from janitor~n"),
+      if
+        State == clean -> global:whereis_name(janitor) ! no;
+        State == dirty -> global:whereis_name(janitor) ! yes
+      end, street(State);
+    is_fantic ->
+      io:format("Recived is_fantic from police~n"),
+      if
+        State == clean -> global:whereis_name(police) ! no;
+        State == dirty -> global:whereis_name(police) ! yes
+      end, street(State)
+  end.
 
 start_street(JanitorNodeName, PoliceNodeName) ->
   global:register_name(street, self()),
   ping(JanitorNodeName, pang),
   ping(PoliceNodeName, pang),
-  street().
+  street(clean).
 
 
 
@@ -101,7 +123,7 @@ start_tree(StreetNodeName) ->
 wind() ->
   io:format("Sending wind to tree ~n", []),
   global:whereis_name(tree) ! wind,
-%%  timer:sleep(10000),
+  timer:sleep(10000),
   wind().
 
 start_wind(TreeNodeName) ->
@@ -115,3 +137,10 @@ start_wind(TreeNodeName) ->
 %% lab3:start_wind('tree@maximuspk.fl.zsttk.ru').
 %% lab3:start_police('student@maximuspk.fl.zsttk.ru').
 %% lab3:start_student('street@maximuspk.fl.zsttk.ru').
+
+%% lab3:start_street('janitor@max.wifi.astu','police@max.wifi.astu').
+%% lab3:start_janitor('street@max.wifi.astu').
+%% lab3:start_tree('street@max.wifi.astu').
+%% lab3:start_wind('tree@max.wifi.astu').
+%% lab3:start_police('student@max.wifi.astu').
+%% lab3:start_student('street@max.wifi.astu').
